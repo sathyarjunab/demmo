@@ -1,5 +1,7 @@
 const { isColString } = require("sequelize/lib/utils");
 const Product = require("../models/product");
+const User = require("../models/user");
+const { where } = require("sequelize");
 
 exports.getAddProduct = (req, res, next) => {
   res.render("admin/edit-product", {
@@ -14,12 +16,13 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
-  Product.create({
-    title: title,
-    price: price,
-    imageUrl: imageUrl,
-    description: description,
-  })
+  req.user
+    .createProduct({
+      title: title,
+      price: price,
+      imageUrl: imageUrl,
+      description: description,
+    })
     .then((result) => {
       console.log("created");
       res.redirect("/");
@@ -35,8 +38,10 @@ exports.geteditProduct = (req, res, next) => {
     return res.redirect("/");
   }
   const prodId = req.params.productId;
-  Product.findByPk(prodId)
-    .then((product) => {
+  req.user
+    .getProducts({ where: { id: prodId } })
+    .then((products) => {
+      let product = products[0];
       if (!product) {
         return res.redirect("/");
       }
@@ -90,7 +95,8 @@ exports.postDeleteProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.findAll()
+  req.user
+    .getProducts()
     .then((Products) => {
       res.render("admin/products", {
         prods: Products,
